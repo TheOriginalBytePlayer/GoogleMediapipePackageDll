@@ -6,6 +6,9 @@
 #include "MediapipeHandTrackingDll.h"
 #include "MediapipeHolisticTrackingDll.h"
 
+std::vector<cv::Point> handKPs(42); // 全局变量保存手部关键点信息
+int gValidKpCount = 21;
+
 std::string GetGestureResult(int result)
 {
 	std::string result_str = "未知手势";
@@ -68,17 +71,26 @@ std::string GetArmUpAndDownResult(int result)
 	return result_str;
 }
 
+// count可能为21或42
+// count为42时，先右手，后左手
 void LandmarksCallBackImpl(int image_index, PoseInfo* infos, int count)
 {
 	std::cout << "image_index：" << image_index << std::endl;
 	std::cout << "hand joint num：" << count << std::endl;
-	//for (int i = 0; i < count; ++i)
-	//{
+	gValidKpCount = count;
+	if (gValidKpCount > 42) {
+		gValidKpCount = 42;
+	}
+	for (int i = 0; i < count; ++i)
+	{
+		if (i < 42) {
+			handKPs[i] = cv::Point(infos[i].x, infos[i].y);
+		}		
 	//	float x = infos[i].x;
 	//	float y = infos[i].y;
 
 	//	//std::cout << "x=" << x << "," << "y=" << y << endl;
-	//}
+	}
 }
 
 void GestureResultCallBackImpl(int image_index, int* recogn_result, int count)
@@ -88,6 +100,47 @@ void GestureResultCallBackImpl(int image_index, int* recogn_result, int count)
 	{
 		std::cout << "第" << i << "只手的识别结果为：" << GetGestureResult(recogn_result[i]) <<std::endl;
 	}
+}
+
+void DrawHandKeyponts(cv::Mat& srcImage)
+{
+	// 绘制关键点
+	for (int i = 0; i < gValidKpCount; i++) {
+		// 使用 cv::circle 函数绘制实心圆来表示点
+		cv::circle(srcImage, handKPs[i], 6, cv::Scalar(0, 0, 255), -1);
+	}
+
+	int handCount = gValidKpCount / 21;
+	int offset = 0;
+	// 绘制关键点之间的连线
+	cv::Scalar lnColor(0, 255, 0);
+	int lnThickness = 2;
+	for (int i = 0; i < handCount; i++) {
+		cv::line(srcImage, handKPs[offset + 0], handKPs[offset + 1], lnColor, lnThickness);
+		cv::line(srcImage, handKPs[offset + 1], handKPs[offset + 2], lnColor, lnThickness);
+		cv::line(srcImage, handKPs[offset + 2], handKPs[offset + 3], lnColor, lnThickness);
+		cv::line(srcImage, handKPs[offset + 3], handKPs[offset + 4], lnColor, lnThickness);
+		cv::line(srcImage, handKPs[offset + 0], handKPs[offset + 5], lnColor, lnThickness);
+		cv::line(srcImage, handKPs[offset + 5], handKPs[offset + 6], lnColor, lnThickness);
+		cv::line(srcImage, handKPs[offset + 6], handKPs[offset + 7], lnColor, lnThickness);
+		cv::line(srcImage, handKPs[offset + 7], handKPs[offset + 8], lnColor, lnThickness);
+		cv::line(srcImage, handKPs[offset + 9], handKPs[offset + 10], lnColor, lnThickness);
+		cv::line(srcImage, handKPs[offset + 10], handKPs[offset + 11], lnColor, lnThickness);
+		cv::line(srcImage, handKPs[offset + 11], handKPs[offset + 12], lnColor, lnThickness);
+		cv::line(srcImage, handKPs[offset + 13], handKPs[offset + 14], lnColor, lnThickness);
+		cv::line(srcImage, handKPs[offset + 14], handKPs[offset + 15], lnColor, lnThickness);
+		cv::line(srcImage, handKPs[offset + 15], handKPs[offset + 16], lnColor, lnThickness);
+		cv::line(srcImage, handKPs[offset + 0], handKPs[offset + 17], lnColor, lnThickness);
+		cv::line(srcImage, handKPs[offset + 17], handKPs[offset + 18], lnColor, lnThickness);
+		cv::line(srcImage, handKPs[offset + 18], handKPs[offset + 19], lnColor, lnThickness);
+		cv::line(srcImage, handKPs[offset + 19], handKPs[offset + 20], lnColor, lnThickness);
+		cv::line(srcImage, handKPs[offset + 5], handKPs[offset + 9], lnColor, lnThickness);
+		cv::line(srcImage, handKPs[offset + 9], handKPs[offset + 13], lnColor, lnThickness);
+		cv::line(srcImage, handKPs[offset + 13], handKPs[offset + 17], lnColor, lnThickness);
+
+		offset += 21;
+	}
+	
 }
 
 void HandTrackingDllTest()
@@ -152,7 +205,7 @@ void HandTrackingDllTest()
 	}
 
 	//创建窗口
-	cv::namedWindow("打开摄像头", 1);
+	cv::namedWindow("现场视频", 1);
 
 	int image_index = 0;
 	while (1)
@@ -175,6 +228,7 @@ void HandTrackingDllTest()
 		//深拷贝
 		cv::Mat copyMat;
 		frame.copyTo(copyMat);
+		cv::flip(frame, frame, /*flipcode=HORIZONTAL*/ 1);
 
 		// 浅拷贝
 		/*Mat copyMat;
@@ -184,17 +238,22 @@ void HandTrackingDllTest()
 
 
 		/* 2 第二种方式：传入视频帧并通过回调函数回调结果 */
-		//if (Mediapipe_Hand_Tracking_Detect_Frame(image_index, copyMat.cols, copyMat.rows, (void*)pImageData))
-		//{
-		//	//std::cout << "Mediapipe_Hand_Tracking_Detect_Frame执行成功！" << std::endl;
-		//}
-		//else
-		//{
-		//	std::cout << "Mediapipe_Hand_Tracking_Detect_Frame执行失败！" << std::endl;
-		//}
+		gValidKpCount = 0;
+		if (mediapipeHandTrackingDll.m_Mediapipe_Hand_Tracking_Detect_Frame(image_index, copyMat.cols, copyMat.rows, (void*)pImageData))
+		{
+			if (gValidKpCount > 0) {
+				DrawHandKeyponts(frame);
+			}				
+			//std::cout << "Mediapipe_Hand_Tracking_Detect_Frame执行成功！" << std::endl;
+		}
+		else
+		{
+			std::cout << "Mediapipe_Hand_Tracking_Detect_Frame执行失败！" << std::endl;
+		}
+		//cv::flip(frame, frame, /*flipcode=HORIZONTAL*/ 1);
 
 		/* 3 第三种方式：传入视频帧直接返回手势识别结果，不通过回调函数返回结果 */
-		GestureRecognitionResult gestureRecognitionResult;
+		/*GestureRecognitionResult gestureRecognitionResult;
 		if (mediapipeHandTrackingDll.m_Mediapipe_Hand_Tracking_Detect_Frame_Direct(copyMat.cols, copyMat.rows, (void*)pImageData, gestureRecognitionResult))
 		{
 			for (int i = 0; i < 2; ++i)
@@ -214,11 +273,11 @@ void HandTrackingDllTest()
 		else
 		{
 			std::cout << "Mediapipe_Hand_Tracking_Detect_Frame_Direct执行失败！" << std::endl;
-		}
+		}*/
 
 
 		//显示摄像头读取到的图像
-		imshow("打开摄像头", frame);
+		imshow("现场视频", frame);
 		//等待1毫秒，如果按键则退出循环
 		if (cv::waitKey(1) >= 0)
 		{
@@ -360,9 +419,10 @@ void HolisticTrackingDllTest()
 
 int main()
 {
-	//HandTrackingDllTest();
+	HandTrackingDllTest();
 
-	HolisticTrackingDllTest();
+	// DLL内部自绘；不会有回调信息
+	//HolisticTrackingDllTest();
 
 	getchar();
 
