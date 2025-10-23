@@ -68,7 +68,7 @@ msbuild HolisticTrackingDll.sln /p:Configuration=Release /p:Platform=x64
 
 - Verify `MEDIAPIPE_ROOT` is set correctly
 - Restart Visual Studio after setting the environment variable
-- Ensure MediaPipe is built (bazel-mediapipe directory exists)
+- Ensure MediaPipe is built (check that `%MEDIAPIPE_ROOT%\bazel-mediapipe\external\com_google_absl` directory exists)
 
 ### Linker errors
 
@@ -85,7 +85,7 @@ msbuild HolisticTrackingDll.sln /p:Configuration=Release /p:Platform=x64
 
 After building:
 1. Copy the DLL to your application directory
-2. See `dll_use_example` for usage examples
+2. See `../../dll_use_example/MediapipePackageDllTest/` for usage examples
 3. Refer to the API in `HolisticTrackingApi.h`
 
 ## Getting Help
