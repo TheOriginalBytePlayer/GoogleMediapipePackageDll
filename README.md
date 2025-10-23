@@ -23,7 +23,9 @@ The HandTracking and HolisticTracking functions in Google Mediapipe are encapsul
 
 # 2 Project Structure
 
-- The dll folder contains header files, source files, and Bazel compiled project files for generating dynamic link libraries;
+- The dll folder contains header files, source files, and build project files for generating dynamic link libraries:
+  - Bazel BUILD files for building with Bazel (original build method)
+  - Visual Studio solution and project files for building with Visual Studio (see `dll/holistic_tracking_dll/README_VS_PROJECT.md`)
 - dll_use_example contains a Visual Studio 2019 project, mainly to demonstrate how to use the above compiled dynamic link library;
 
 
@@ -46,4 +48,17 @@ The HandTracking and HolisticTracking functions in Google Mediapipe are encapsul
 
 -  [https://www.stubbornhuang.com/1919/](https://www.stubbornhuang.com/1919/)
 - [https://blog.csdn.net/HW140701/article/details/122606320](https://blog.csdn.net/HW140701/article/details/122606320)
+
+## 3.4 Building with Visual Studio
+
+Visual Studio project files are now available for the HolisticTracking DLL:
+
+- **Location**: `dll/holistic_tracking_dll/HolisticTrackingDll.sln`
+- **Documentation**: See `dll/holistic_tracking_dll/README_VS_PROJECT.md` for detailed build instructions
+- **Requirements**: 
+  - Visual Studio 2019 or later
+  - MediaPipe built with Bazel
+  - Set `MEDIAPIPE_ROOT` environment variable
+
+This provides an alternative to Bazel for developers who prefer Visual Studio or need to integrate the DLL into Visual Studio-based projects.
 
