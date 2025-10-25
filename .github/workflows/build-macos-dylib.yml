@@ -24,9 +24,10 @@ jobs:
       with:
         python-version: '3.9'
     
-    - name: Install Bazelisk
+    - name: Install bazelisk (macOS)
       run: |
-        brew install bazelisk
+        brew install bazelisk || true
+        bazelisk version
     
     - name: Cache Bazel
       uses: actions/cache@v3
