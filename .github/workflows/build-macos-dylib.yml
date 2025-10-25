@@ -26,7 +26,8 @@ jobs:
     
     - name: Install Bazelisk
       run: |
-        brew install bazelisk
+        source .github/scripts/retry.sh
+        retry brew install bazelisk
     
     - name: Cache Bazel
       uses: actions/cache@v3
@@ -39,7 +40,8 @@ jobs:
         
     - name: Clone MediaPipe
       run: |
-        git clone https://github.com/google/mediapipe.git
+        source .github/scripts/retry.sh
+        retry git clone https://github.com/google/mediapipe.git
         cd mediapipe
         git checkout v0.8.6
         # Override MediaPipe's Bazel version with our required version
@@ -47,10 +49,11 @@ jobs:
       
     - name: Setup MediaPipe environment
       run: |
+        source .github/scripts/retry.sh
         cd mediapipe
-        python3 -m pip install --upgrade pip
-        pip3 install opencv-contrib-python
-        pip3 install absl-py attrs
+        retry python3 -m pip install --upgrade pip
+        retry pip3 install opencv-contrib-python
+        retry pip3 install absl-py attrs
       
     - name: Copy holistic_tracking_dll to MediaPipe
       run: |
@@ -59,8 +62,9 @@ jobs:
       
     - name: Build DyLib with Bazel
       run: |
+        source .github/scripts/retry.sh
         cd mediapipe
-        bazel build -c opt --define MEDIAPIPE_DISABLE_GPU=1 //mediapipe/examples/desktop/holistic_tracking_dll:MediapipeHolisticTracking
+        retry bazel build -c opt --define MEDIAPIPE_DISABLE_GPU=1 //mediapipe/examples/desktop/holistic_tracking_dll:MediapipeHolisticTracking
       timeout-minutes: 120
       
     - name: Prepare artifacts
