@@ -1,0 +1,101 @@
+name: Build Windows DLL
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    
+    permissions:
+      contents: read
+      actions: read
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+    
+    - name: Install Bazelisk
+      run: |
+        choco install bazelisk -y
+        
+    - name: Setup MSYS2
+      uses: msys2/setup-msys2@v2
+      with:
+        msystem: MINGW64
+        update: true
+        install: git patch unzip
+    
+    - name: Setup Visual Studio environment
+      uses: microsoft/setup-msbuild@v1.3
+    
+    - name: Cache Bazel
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cache/bazel
+          ~/AppData/Local/Temp/bazel
+        key: ${{ runner.os }}-bazel-${{ hashFiles('dll/holistic_tracking_dll/BUILD') }}
+        restore-keys: |
+          ${{ runner.os }}-bazel-
+      
+    - name: Clone MediaPipe
+      run: |
+        git clone https://github.com/google/mediapipe.git
+        cd mediapipe
+        git checkout v0.8.6
+      shell: bash
+      
+    - name: Setup MediaPipe environment
+      run: |
+        cd mediapipe
+        python -m pip install --upgrade pip
+        pip install opencv-contrib-python
+        pip install absl-py attrs
+      shell: bash
+      
+    - name: Copy holistic_tracking_dll to MediaPipe
+      run: |
+        mkdir -p mediapipe/mediapipe/examples/desktop/holistic_tracking_dll
+        cp -r dll/holistic_tracking_dll/* mediapipe/mediapipe/examples/desktop/holistic_tracking_dll/
+      shell: bash
+      
+    - name: Build DLL with Bazel
+      run: |
+        cd mediapipe
+        export BAZEL_VS=C:\\Program Files\\Microsoft Visual Studio\\2022\\Enterprise
+        bazel build -c opt --define MEDIAPIPE_DISABLE_GPU=1 --action_env PYTHON_BIN_PATH="C:\\hostedtoolcache\\windows\\Python\\3.9.13\\x64\\python.exe" //mediapipe/examples/desktop/holistic_tracking_dll:MediapipeHolisticTracking
+      shell: bash
+      timeout-minutes: 120
+      
+    - name: Prepare artifacts
+      run: |
+        mkdir -p artifacts
+        echo "Looking for built DLL..."
+        find mediapipe/bazel-bin -name "*.dll" -o -name "*.so" | head -20
+        # Copy DLL to artifacts
+        if [ -f mediapipe/bazel-bin/mediapipe/examples/desktop/holistic_tracking_dll/MediapipeHolisticTracking.dll ]; then
+          cp mediapipe/bazel-bin/mediapipe/examples/desktop/holistic_tracking_dll/MediapipeHolisticTracking.dll artifacts/
+          echo "Found DLL at expected location"
+        else
+          echo "DLL not found at expected location, searching..."
+          find mediapipe/bazel-bin -name "*.dll" -exec cp {} artifacts/ \;
+        fi
+        ls -la artifacts/
+      shell: bash
+      
+      - name: Upload DLL artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MediapipeHolisticTracking-Windows-DLL
+          path: artifacts/*.dll
+          if-no-files-found: error

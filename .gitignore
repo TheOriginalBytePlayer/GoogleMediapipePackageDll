@@ -396,3 +396,9 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+
+# Bazel build outputs
+bazel-*
+
+# Build artifacts directory
+artifacts/

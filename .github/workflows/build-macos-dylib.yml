@@ -1,0 +1,85 @@
+name: Build macOS DyLib
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build-macos:
+    runs-on: macos-latest
+    
+    permissions:
+      contents: read
+      actions: read
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+    
+    - name: Install Bazelisk
+      run: |
+        brew install bazelisk
+    
+    - name: Cache Bazel
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cache/bazel
+        key: ${{ runner.os }}-bazel-${{ hashFiles('dll/holistic_tracking_dll/BUILD') }}
+        restore-keys: |
+          ${{ runner.os }}-bazel-
+        
+    - name: Clone MediaPipe
+      run: |
+        git clone https://github.com/google/mediapipe.git
+        cd mediapipe
+        git checkout v0.8.6
+      
+    - name: Setup MediaPipe environment
+      run: |
+        cd mediapipe
+        python3 -m pip install --upgrade pip
+        pip3 install opencv-contrib-python
+        pip3 install absl-py attrs
+      
+    - name: Copy holistic_tracking_dll to MediaPipe
+      run: |
+        mkdir -p mediapipe/mediapipe/examples/desktop/holistic_tracking_dll
+        cp -r dll/holistic_tracking_dll/* mediapipe/mediapipe/examples/desktop/holistic_tracking_dll/
+      
+    - name: Build DyLib with Bazel
+      run: |
+        cd mediapipe
+        bazel build -c opt --define MEDIAPIPE_DISABLE_GPU=1 //mediapipe/examples/desktop/holistic_tracking_dll:MediapipeHolisticTracking
+      timeout-minutes: 120
+      
+    - name: Prepare artifacts
+      run: |
+        mkdir -p artifacts
+        echo "Looking for built library..."
+        find mediapipe/bazel-bin -name "*.so" -o -name "*.dylib" | head -20
+        # On macOS, Bazel builds .so files for shared libraries
+        if [ -f mediapipe/bazel-bin/mediapipe/examples/desktop/holistic_tracking_dll/libMediapipeHolisticTracking.so ]; then
+          cp mediapipe/bazel-bin/mediapipe/examples/desktop/holistic_tracking_dll/libMediapipeHolisticTracking.so artifacts/MediapipeHolisticTracking.dylib
+          echo "Found library at expected location"
+        else
+          echo "Library not found at expected location, searching..."
+          find mediapipe/bazel-bin -name "*.so" -exec cp {} artifacts/ \;
+          find mediapipe/bazel-bin -name "*.dylib" -exec cp {} artifacts/ \;
+        fi
+        ls -la artifacts/
+      
+    - name: Upload DyLib artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: MediapipeHolisticTracking-macOS-DyLib
+        path: artifacts/*
+        if-no-files-found: error
