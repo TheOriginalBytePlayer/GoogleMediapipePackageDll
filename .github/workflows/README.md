@@ -102,6 +102,19 @@ The following files from `dll/holistic_tracking_dll/` are included in the build:
 - Check the workflow logs for specific error messages
 - Ensure the MediaPipe version matches what's tested in the repository
 - Try re-running the workflow (GitHub runners can occasionally have issues)
+- **Note:** Workflows now automatically retry failed network operations and build commands using exponential backoff (see Automatic Retry Logic below)
+
+### Automatic Retry Logic
+
+Both workflows now include automatic retry functionality for improved reliability:
+
+- **Retry Script:** `.github/scripts/retry.sh` provides intelligent retry logic
+- **Configurable Attempts:** Defaults to 3 attempts (configurable via `RETRY_MAX`)
+- **Exponential Backoff:** Wait times increase exponentially between retries with jitter to avoid thundering herd
+- **Retry Coverage:** Network operations (git clone, package downloads), package installations (pip, choco, brew), and build commands (bazel)
+- **Error Logging:** Failed commands have their error logs extracted and saved for debugging
+
+This automatic retry logic helps handle transient network failures and temporary resource issues without manual intervention.
 
 ### Artifacts Not Found
 
