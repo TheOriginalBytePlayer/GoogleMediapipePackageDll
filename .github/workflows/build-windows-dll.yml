@@ -27,8 +27,9 @@ jobs:
     - name: Install bazelisk (Windows)
       shell: powershell
       run: |
-        choco install -y bazelisk
-        bazelisk version
+        source .github/scripts/retry.sh
+        retry choco install bazelisk -y
+      shell: bash
         
     - name: Setup MSYS2
       uses: msys2/setup-msys2@v2
@@ -52,17 +53,19 @@ jobs:
       
     - name: Clone MediaPipe
       run: |
-        git clone https://github.com/google/mediapipe.git
+        source .github/scripts/retry.sh
+        retry git clone https://github.com/google/mediapipe.git
         cd mediapipe
-        git checkout v0.8.6
+        retry git checkout v0.8.6
       shell: bash
       
     - name: Setup MediaPipe environment
       run: |
+        source .github/scripts/retry.sh
         cd mediapipe
-        python -m pip install --upgrade pip
-        pip install opencv-contrib-python
-        pip install absl-py attrs
+        retry python -m pip install --upgrade pip
+        retry pip install opencv-contrib-python
+        retry pip install absl-py attrs
       shell: bash
       
     - name: Copy holistic_tracking_dll to MediaPipe
@@ -73,9 +76,10 @@ jobs:
       
     - name: Build DLL with Bazel
       run: |
+        source .github/scripts/retry.sh
         cd mediapipe
         export BAZEL_VS=C:\\Program Files\\Microsoft Visual Studio\\2022\\Enterprise
-        bazel build -c opt --define MEDIAPIPE_DISABLE_GPU=1 --action_env PYTHON_BIN_PATH="C:\\hostedtoolcache\\windows\\Python\\3.9.13\\x64\\python.exe" //mediapipe/examples/desktop/holistic_tracking_dll:MediapipeHolisticTracking
+        retry bazel build -c opt --define MEDIAPIPE_DISABLE_GPU=1 --action_env PYTHON_BIN_PATH="C:\\hostedtoolcache\\windows\\Python\\3.9.13\\x64\\python.exe" //mediapipe/examples/desktop/holistic_tracking_dll:MediapipeHolisticTracking
       shell: bash
       timeout-minutes: 120
       
