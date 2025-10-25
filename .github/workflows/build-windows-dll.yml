@@ -10,37 +10,35 @@ on:
 jobs:
   build-windows:
     runs-on: windows-latest
-    
+
     permissions:
       contents: read
       actions: read
-    
+
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
-      
+
     - name: Setup Python
       uses: actions/setup-python@v4
       with:
         python-version: '3.9'
-    
+
     - name: Install bazelisk (Windows)
       shell: powershell
       run: |
-        source .github/scripts/retry.sh
-        retry choco install bazelisk -y
-      shell: bash
-        
+        choco install bazelisk -y
+
     - name: Setup MSYS2
       uses: msys2/setup-msys2@v2
       with:
         msystem: MINGW64
         update: true
         install: git patch unzip
-    
+
     - name: Setup Visual Studio environment
       uses: microsoft/setup-msbuild@v1.3
-    
+
     - name: Cache Bazel
       uses: actions/cache@v3
       with:
@@ -50,7 +48,7 @@ jobs:
         key: ${{ runner.os }}-bazel-${{ hashFiles('dll/holistic_tracking_dll/BUILD') }}
         restore-keys: |
           ${{ runner.os }}-bazel-
-      
+
     - name: Clone MediaPipe
       run: |
         source .github/scripts/retry.sh
@@ -60,7 +58,7 @@ jobs:
         # Override MediaPipe's Bazel version with our required version
         cp ../.bazelversion .bazelversion
       shell: bash
-      
+
     - name: Setup MediaPipe environment
       run: |
         source .github/scripts/retry.sh
@@ -69,22 +67,22 @@ jobs:
         retry pip install opencv-contrib-python
         retry pip install absl-py attrs
       shell: bash
-      
+
     - name: Copy holistic_tracking_dll to MediaPipe
       run: |
         mkdir -p mediapipe/mediapipe/examples/desktop/holistic_tracking_dll
         cp -r dll/holistic_tracking_dll/* mediapipe/mediapipe/examples/desktop/holistic_tracking_dll/
       shell: bash
-      
+
     - name: Build DLL with Bazel
       run: |
         source .github/scripts/retry.sh
         cd mediapipe
-        export BAZEL_VS=C:\\Program Files\\Microsoft Visual Studio\\2022\\Enterprise
+        export BAZEL_VS="C:\\Program Files\\Microsoft Visual Studio\\2022\\Enterprise"
         retry bazel build -c opt --define MEDIAPIPE_DISABLE_GPU=1 --action_env PYTHON_BIN_PATH="C:\\hostedtoolcache\\windows\\Python\\3.9.13\\x64\\python.exe" //mediapipe/examples/desktop/holistic_tracking_dll:MediapipeHolisticTracking
       shell: bash
       timeout-minutes: 120
-      
+
     - name: Prepare artifacts
       run: |
         mkdir -p artifacts
@@ -100,10 +98,10 @@ jobs:
         fi
         ls -la artifacts/
       shell: bash
-      
+
     - name: Upload DLL artifact
       uses: actions/upload-artifact@v4
       with:
-          name: MediapipeHolisticTracking-Windows-DLL
-          path: artifacts/*.dll
-          if-no-files-found: error
+        name: MediapipeHolisticTracking-Windows-DLL
+        path: artifacts/*.dll
+        if-no-files-found: error
