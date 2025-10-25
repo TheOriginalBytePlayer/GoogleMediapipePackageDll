@@ -24,7 +24,8 @@ jobs:
       with:
         python-version: '3.9'
     
-    - name: Install Bazelisk
+    - name: Install bazelisk (Windows)
+      shell: powershell
       run: |
         source .github/scripts/retry.sh
         retry choco install bazelisk -y

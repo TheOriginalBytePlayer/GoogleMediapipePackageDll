@@ -24,7 +24,7 @@ jobs:
       with:
         python-version: '3.9'
     
-    - name: Install Bazelisk
+    - name: Install bazelisk (macOS)
       run: |
         source .github/scripts/retry.sh
         retry brew install bazelisk
