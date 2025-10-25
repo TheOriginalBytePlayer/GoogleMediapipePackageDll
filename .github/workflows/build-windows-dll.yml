@@ -55,7 +55,9 @@ jobs:
         source .github/scripts/retry.sh
         retry git clone https://github.com/google/mediapipe.git
         cd mediapipe
-        retry git checkout v0.8.6
+        git checkout v0.8.6
+        # Override MediaPipe's Bazel version with our required version
+        cp ../.bazelversion .bazelversion
       shell: bash
       
     - name: Setup MediaPipe environment
