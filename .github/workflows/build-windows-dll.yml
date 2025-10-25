@@ -33,6 +33,16 @@ jobs:
     
     - name: Setup Visual Studio environment
       uses: microsoft/setup-msbuild@v1.3
+    
+    - name: Cache Bazel
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cache/bazel
+          ~/AppData/Local/Temp/bazel
+        key: ${{ runner.os }}-bazel-${{ hashFiles('dll/holistic_tracking_dll/BUILD') }}
+        restore-keys: |
+          ${{ runner.os }}-bazel-
       
     - name: Clone MediaPipe
       run: |
@@ -66,9 +76,17 @@ jobs:
     - name: Prepare artifacts
       run: |
         mkdir -p artifacts
-        cp mediapipe/bazel-bin/mediapipe/examples/desktop/holistic_tracking_dll/MediapipeHolisticTracking.dll artifacts/ || echo "DLL not found at expected location"
-        # Try alternate locations
-        find mediapipe/bazel-bin -name "*.dll" -exec cp {} artifacts/ \; || true
+        echo "Looking for built DLL..."
+        find mediapipe/bazel-bin -name "*.dll" -o -name "*.so" | head -20
+        # Copy DLL to artifacts
+        if [ -f mediapipe/bazel-bin/mediapipe/examples/desktop/holistic_tracking_dll/MediapipeHolisticTracking.dll ]; then
+          cp mediapipe/bazel-bin/mediapipe/examples/desktop/holistic_tracking_dll/MediapipeHolisticTracking.dll artifacts/
+          echo "Found DLL at expected location"
+        else
+          echo "DLL not found at expected location, searching..."
+          find mediapipe/bazel-bin -name "*.dll" -exec cp {} artifacts/ \;
+        fi
+        ls -la artifacts/
       shell: bash
       
     - name: Upload DLL artifact

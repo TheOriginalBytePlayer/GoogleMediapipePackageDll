@@ -23,6 +23,15 @@ jobs:
     - name: Install Bazelisk
       run: |
         brew install bazelisk
+    
+    - name: Cache Bazel
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cache/bazel
+        key: ${{ runner.os }}-bazel-${{ hashFiles('dll/holistic_tracking_dll/BUILD') }}
+        restore-keys: |
+          ${{ runner.os }}-bazel-
         
     - name: Clone MediaPipe
       run: |
@@ -51,12 +60,17 @@ jobs:
     - name: Prepare artifacts
       run: |
         mkdir -p artifacts
+        echo "Looking for built library..."
+        find mediapipe/bazel-bin -name "*.so" -o -name "*.dylib" | head -20
         # On macOS, Bazel builds .so files for shared libraries
-        cp mediapipe/bazel-bin/mediapipe/examples/desktop/holistic_tracking_dll/libMediapipeHolisticTracking.so artifacts/MediapipeHolisticTracking.dylib || echo "DyLib not found at expected location"
-        # Try alternate locations
-        find mediapipe/bazel-bin -name "*.so" -exec cp {} artifacts/ \; || true
-        find mediapipe/bazel-bin -name "*.dylib" -exec cp {} artifacts/ \; || true
-        # List what we found
+        if [ -f mediapipe/bazel-bin/mediapipe/examples/desktop/holistic_tracking_dll/libMediapipeHolisticTracking.so ]; then
+          cp mediapipe/bazel-bin/mediapipe/examples/desktop/holistic_tracking_dll/libMediapipeHolisticTracking.so artifacts/MediapipeHolisticTracking.dylib
+          echo "Found library at expected location"
+        else
+          echo "Library not found at expected location, searching..."
+          find mediapipe/bazel-bin -name "*.so" -exec cp {} artifacts/ \;
+          find mediapipe/bazel-bin -name "*.dylib" -exec cp {} artifacts/ \;
+        fi
         ls -la artifacts/
       
     - name: Upload DyLib artifact
