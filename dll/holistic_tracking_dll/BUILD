@@ -33,6 +33,14 @@ cc_binary(
     ],
 )
 
+cc_binary(
+    name = "MediapipeHolisticTracking.dll",
+	srcs = ["HolisticTrackingApi.h","HolisticTrackingApi.cpp","HolisticTrackingDetect.h","HolisticTrackingDetect.cpp","GestureRecognition.h","GestureRecognition.cpp","TrackingDataStructure.h","ArmUpAndDownRecognition.h","ArmUpAndDownRecognition.cpp"],
+    linkshared=True,
+    deps = [
+        "//mediapipe/graphs/holistic_tracking:holistic_tracking_cpu_graph_deps",
+    ],
+)
 
 # Linux only
 cc_binary(
