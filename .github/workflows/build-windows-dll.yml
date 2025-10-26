@@ -55,8 +55,6 @@ jobs:
         retry git clone https://github.com/google/mediapipe.git
         cd mediapipe
         git checkout v0.8.6
-        # Override MediaPipe's Bazel version with our required version
-        cp ../.bazelversion .bazelversion
       shell: bash
 
     - name: Setup MediaPipe environment
