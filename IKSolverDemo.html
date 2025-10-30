@@ -348,14 +348,24 @@
             const distance = solved[solved.length - 1].position.distance(target);
             const angles = IKSolver.calculateJointAngles(solved);
             
-            output.innerHTML = `
-                <div class="output-line info">Algorithm: ${algorithm.toUpperCase()}</div>
-                <div class="output-line info">Solve time: ${(endTime - startTime).toFixed(2)}ms</div>
-                <div class="output-line ${distance < 1 ? 'success' : ''}">Distance to target: ${distance.toFixed(4)}</div>
-                <div class="output-line">Joint angles: ${angles.map(a => a.toFixed(1) + '°').join(', ')}</div>
-                <div class="output-line">Joint positions:</div>
-                ${solved.map((j, i) => `<div class="output-line">  Joint ${i}: (${j.position.x.toFixed(1)}, ${j.position.y.toFixed(1)}, ${j.position.z.toFixed(1)})</div>`).join('')}
-            `;
+            // Clear and build output safely
+            output.textContent = '';
+            
+            const createOutputLine = (text, className = '') => {
+                const div = document.createElement('div');
+                div.className = `output-line ${className}`;
+                div.textContent = text;
+                return div;
+            };
+            
+            output.appendChild(createOutputLine(`Algorithm: ${algorithm.toUpperCase()}`, 'info'));
+            output.appendChild(createOutputLine(`Solve time: ${(endTime - startTime).toFixed(2)}ms`, 'info'));
+            output.appendChild(createOutputLine(`Distance to target: ${distance.toFixed(4)}`, distance < 1 ? 'success' : ''));
+            output.appendChild(createOutputLine(`Joint angles: ${angles.map(a => a.toFixed(1) + '°').join(', ')}`));
+            output.appendChild(createOutputLine('Joint positions:'));
+            solved.forEach((j, i) => {
+                output.appendChild(createOutputLine(`  Joint ${i}: (${j.position.x.toFixed(1)}, ${j.position.y.toFixed(1)}, ${j.position.z.toFixed(1)})`));
+            });
         }
         
         function solveFingerIK() {
@@ -375,14 +385,24 @@
             const distance = solved[solved.length - 1].position.distance(target);
             const angles = IKSolver.calculateJointAngles(solved);
             
-            output.innerHTML = `
-                <div class="output-line info">Algorithm: FABRIK</div>
-                <div class="output-line info">Solve time: ${(endTime - startTime).toFixed(2)}ms</div>
-                <div class="output-line ${distance < 1 ? 'success' : ''}">Distance to target: ${distance.toFixed(4)}</div>
-                <div class="output-line">Joint angles: ${angles.map(a => a.toFixed(1) + '°').join(', ')}</div>
-                <div class="output-line">Joint positions:</div>
-                ${solved.map((j, i) => `<div class="output-line">  Joint ${i}: (${j.position.x.toFixed(1)}, ${j.position.y.toFixed(1)}, ${j.position.z.toFixed(1)})</div>`).join('')}
-            `;
+            // Clear and build output safely
+            output.textContent = '';
+            
+            const createOutputLine = (text, className = '') => {
+                const div = document.createElement('div');
+                div.className = `output-line ${className}`;
+                div.textContent = text;
+                return div;
+            };
+            
+            output.appendChild(createOutputLine('Algorithm: FABRIK', 'info'));
+            output.appendChild(createOutputLine(`Solve time: ${(endTime - startTime).toFixed(2)}ms`, 'info'));
+            output.appendChild(createOutputLine(`Distance to target: ${distance.toFixed(4)}`, distance < 1 ? 'success' : ''));
+            output.appendChild(createOutputLine(`Joint angles: ${angles.map(a => a.toFixed(1) + '°').join(', ')}`));
+            output.appendChild(createOutputLine('Joint positions:'));
+            solved.forEach((j, i) => {
+                output.appendChild(createOutputLine(`  Joint ${i}: (${j.position.x.toFixed(1)}, ${j.position.y.toFixed(1)}, ${j.position.z.toFixed(1)})`));
+            });
         }
         
         // Initialize on load
