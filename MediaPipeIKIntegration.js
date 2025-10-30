@@ -8,6 +8,28 @@
 const { IKSolver, Vector3D, Joint } = require('./IKSolver.js');
 
 /**
+ * Joint angle constraints (in degrees)
+ * These represent typical human anatomical limits
+ */
+const JointConstraints = {
+    // Finger joint limits - fingers can curl from slightly backward to fully forward
+    MIN_FINGER_ANGLE: -20,  // Slight hyperextension
+    MAX_FINGER_ANGLE: 110,  // Full flexion
+    
+    // Shoulder joint limits - full range of motion
+    MIN_SHOULDER_ANGLE: -180,
+    MAX_SHOULDER_ANGLE: 180,
+    
+    // Elbow joint limits - can't bend backward, can bend fully forward
+    MIN_ELBOW_ANGLE: 0,     // Fully extended
+    MAX_ELBOW_ANGLE: 160,   // Fully flexed
+    
+    // Wrist joint limits - moderate flexion/extension
+    MIN_WRIST_ANGLE: -90,
+    MAX_WRIST_ANGLE: 90
+};
+
+/**
  * MediaPipe Hand Landmark Indices
  * Reference: https://developers.google.com/mediapipe/solutions/vision/hand_landmarker
  */
@@ -89,8 +111,7 @@ function extractFingerChain(landmarks, fingerName, scale = 100) {
     
     return indices.map(idx => {
         const pos = landmarkToVector3D(landmarks[idx], scale);
-        // Set typical finger joint constraints
-        return new Joint(pos, -20, 110);
+        return new Joint(pos, JointConstraints.MIN_FINGER_ANGLE, JointConstraints.MAX_FINGER_ANGLE);
     });
 }
 
@@ -107,9 +128,12 @@ function extractArmChain(landmarks, side = 'left', scale = 100) {
     const wristIdx = side === 'left' ? PoseLandmarks.LEFT_WRIST : PoseLandmarks.RIGHT_WRIST;
     
     return [
-        new Joint(landmarkToVector3D(landmarks[shoulderIdx], scale), -180, 180),
-        new Joint(landmarkToVector3D(landmarks[elbowIdx], scale), 0, 160),
-        new Joint(landmarkToVector3D(landmarks[wristIdx], scale), -90, 90)
+        new Joint(landmarkToVector3D(landmarks[shoulderIdx], scale), 
+                  JointConstraints.MIN_SHOULDER_ANGLE, JointConstraints.MAX_SHOULDER_ANGLE),
+        new Joint(landmarkToVector3D(landmarks[elbowIdx], scale), 
+                  JointConstraints.MIN_ELBOW_ANGLE, JointConstraints.MAX_ELBOW_ANGLE),
+        new Joint(landmarkToVector3D(landmarks[wristIdx], scale), 
+                  JointConstraints.MIN_WRIST_ANGLE, JointConstraints.MAX_WRIST_ANGLE)
     ];
 }
 
@@ -179,41 +203,57 @@ function manipulateArm(landmarks, side, targetPosition, algorithm = 'fabrik') {
     return solved;
 }
 
+/**
+ * Create simulated MediaPipe hand landmarks for demo purposes
+ * In real usage, these would come from MediaPipe hand tracking
+ * @returns {Array} Array of 21 hand landmarks with normalized coordinates (0-1)
+ */
+function createSimulatedHandLandmarks() {
+    // Hand landmarks in a neutral open hand pose
+    return [
+        { x: 0.5, y: 0.5, z: 0 },     // 0: WRIST
+        { x: 0.45, y: 0.48, z: 0.01 }, // 1: THUMB_CMC
+        { x: 0.42, y: 0.45, z: 0.02 }, // 2: THUMB_MCP
+        { x: 0.40, y: 0.42, z: 0.03 }, // 3: THUMB_IP
+        { x: 0.38, y: 0.39, z: 0.04 }, // 4: THUMB_TIP
+        { x: 0.52, y: 0.45, z: 0 },    // 5: INDEX_MCP
+        { x: 0.53, y: 0.40, z: 0 },    // 6: INDEX_PIP
+        { x: 0.54, y: 0.36, z: 0 },    // 7: INDEX_DIP
+        { x: 0.55, y: 0.33, z: 0 },    // 8: INDEX_TIP
+        { x: 0.54, y: 0.45, z: 0 },    // 9: MIDDLE_MCP
+        { x: 0.55, y: 0.39, z: 0 },    // 10: MIDDLE_PIP
+        { x: 0.56, y: 0.34, z: 0 },    // 11: MIDDLE_DIP
+        { x: 0.57, y: 0.30, z: 0 },    // 12: MIDDLE_TIP
+        { x: 0.56, y: 0.45, z: 0 },    // 13: RING_MCP
+        { x: 0.57, y: 0.40, z: 0 },    // 14: RING_PIP
+        { x: 0.58, y: 0.36, z: 0 },    // 15: RING_DIP
+        { x: 0.59, y: 0.33, z: 0 },    // 16: RING_TIP
+        { x: 0.58, y: 0.46, z: 0 },    // 17: PINKY_MCP
+        { x: 0.59, y: 0.42, z: 0 },    // 18: PINKY_PIP
+        { x: 0.60, y: 0.39, z: 0 },    // 19: PINKY_DIP
+        { x: 0.61, y: 0.37, z: 0 }     // 20: PINKY_TIP
+    ];
+}
+
+/**
+ * Create simulated MediaPipe pose landmarks for demo purposes
+ * In real usage, these would come from MediaPipe pose tracking
+ * @returns {Array} Sparse array of pose landmarks with normalized coordinates (0-1)
+ */
+function createSimulatedPoseLandmarks() {
+    const landmarks = [];
+    landmarks[PoseLandmarks.LEFT_SHOULDER] = { x: 0.4, y: 0.3, z: 0 };
+    landmarks[PoseLandmarks.LEFT_ELBOW] = { x: 0.45, y: 0.5, z: 0 };
+    landmarks[PoseLandmarks.LEFT_WRIST] = { x: 0.5, y: 0.7, z: 0 };
+    return landmarks;
+}
+
 // ================= DEMO WITH SIMULATED MEDIAPIPE DATA =================
 
 console.log("=== MediaPipe IK Integration Demo ===\n");
 
-// Simulate MediaPipe hand landmarks (21 points, normalized 0-1 coordinates)
-// In real usage, these would come from MediaPipe hand tracking
-const simulatedHandLandmarks = [
-    { x: 0.5, y: 0.5, z: 0 },     // 0: WRIST
-    { x: 0.45, y: 0.48, z: 0.01 }, // 1: THUMB_CMC
-    { x: 0.42, y: 0.45, z: 0.02 }, // 2: THUMB_MCP
-    { x: 0.40, y: 0.42, z: 0.03 }, // 3: THUMB_IP
-    { x: 0.38, y: 0.39, z: 0.04 }, // 4: THUMB_TIP
-    { x: 0.52, y: 0.45, z: 0 },    // 5: INDEX_MCP
-    { x: 0.53, y: 0.40, z: 0 },    // 6: INDEX_PIP
-    { x: 0.54, y: 0.36, z: 0 },    // 7: INDEX_DIP
-    { x: 0.55, y: 0.33, z: 0 },    // 8: INDEX_TIP
-    { x: 0.54, y: 0.45, z: 0 },    // 9: MIDDLE_MCP
-    { x: 0.55, y: 0.39, z: 0 },    // 10: MIDDLE_PIP
-    { x: 0.56, y: 0.34, z: 0 },    // 11: MIDDLE_DIP
-    { x: 0.57, y: 0.30, z: 0 },    // 12: MIDDLE_TIP
-    { x: 0.56, y: 0.45, z: 0 },    // 13: RING_MCP
-    { x: 0.57, y: 0.40, z: 0 },    // 14: RING_PIP
-    { x: 0.58, y: 0.36, z: 0 },    // 15: RING_DIP
-    { x: 0.59, y: 0.33, z: 0 },    // 16: RING_TIP
-    { x: 0.58, y: 0.46, z: 0 },    // 17: PINKY_MCP
-    { x: 0.59, y: 0.42, z: 0 },    // 18: PINKY_PIP
-    { x: 0.60, y: 0.39, z: 0 },    // 19: PINKY_DIP
-    { x: 0.61, y: 0.37, z: 0 }     // 20: PINKY_TIP
-];
-
-// Simulate MediaPipe pose landmarks (simplified, just arm joints)
-const simulatedPoseLandmarks = [];
-simulatedPoseLandmarks[PoseLandmarks.LEFT_SHOULDER] = { x: 0.4, y: 0.3, z: 0 };
-simulatedPoseLandmarks[PoseLandmarks.LEFT_ELBOW] = { x: 0.45, y: 0.5, z: 0 };
-simulatedPoseLandmarks[PoseLandmarks.LEFT_WRIST] = { x: 0.5, y: 0.7, z: 0 };
+const simulatedHandLandmarks = createSimulatedHandLandmarks();
+const simulatedPoseLandmarks = createSimulatedPoseLandmarks();
 
 // Example 1: Move index finger to a new position
 const indexTargetPosition = new Vector3D(60, 25, 5);
@@ -243,12 +283,15 @@ console.log("5. Use the solved joint positions to update your 3D model or animat
 // Export functions for use in other modules
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
+        JointConstraints,
         HandLandmarks,
         PoseLandmarks,
         landmarkToVector3D,
         extractFingerChain,
         extractArmChain,
         manipulateFinger,
-        manipulateArm
+        manipulateArm,
+        createSimulatedHandLandmarks,
+        createSimulatedPoseLandmarks
     };
 }
