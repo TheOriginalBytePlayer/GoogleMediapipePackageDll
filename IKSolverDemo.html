@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IK Solver Demo - Interactive Skeleton Manipulation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            margin-bottom: 10px;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .demo-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .demo-section h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+        
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .control-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .control-group label {
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #555;
+        }
+        
+        .control-group input {
+            padding: 8px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .control-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        canvas {
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            background: white;
+            display: block;
+            margin: 20px auto;
+        }
+        
+        .output {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 15px;
+        }
+        
+        .output-line {
+            margin: 3px 0;
+        }
+        
+        .success {
+            color: #48bb78;
+        }
+        
+        .info {
+            color: #4299e1;
+        }
+        
+        .joint-visual {
+            fill: #667eea;
+        }
+        
+        .bone-visual {
+            stroke: #4a5568;
+            stroke-width: 3;
+        }
+        
+        .target-visual {
+            fill: #f56565;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>IK Solver Interactive Demo</h1>
+            <p>Inverse Kinematics for Skeleton Manipulation</p>
+        </div>
+        
+        <div class="content">
+            <div class="demo-section">
+                <h2>🎯 Interactive Arm IK Demo</h2>
+                <p>Adjust the target position and see the arm reach for it using IK algorithms.</p>
+                
+                <div class="controls">
+                    <div class="control-group">
+                        <label for="targetX">Target X:</label>
+                        <input type="number" id="targetX" value="150" step="10" min="-300" max="300">
+                    </div>
+                    <div class="control-group">
+                        <label for="targetY">Target Y:</label>
+                        <input type="number" id="targetY" value="150" step="10" min="-300" max="300">
+                    </div>
+                    <div class="control-group">
+                        <label for="targetZ">Target Z:</label>
+                        <input type="number" id="targetZ" value="0" step="10" min="-100" max="100">
+                    </div>
+                    <div class="control-group">
+                        <label for="algorithm">Algorithm:</label>
+                        <select id="algorithm" style="padding: 8px; border: 2px solid #ddd; border-radius: 4px;">
+                            <option value="fabrik">FABRIK</option>
+                            <option value="ccd">CCD</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <button onclick="solveArmIK()">Solve IK</button>
+                
+                <canvas id="armCanvas" width="600" height="400"></canvas>
+                
+                <div id="armOutput" class="output"></div>
+            </div>
+            
+            <div class="demo-section">
+                <h2>✋ Finger IK Demo</h2>
+                <p>Control finger movement with IK solving.</p>
+                
+                <div class="controls">
+                    <div class="control-group">
+                        <label for="fingerTargetX">Finger Target X:</label>
+                        <input type="number" id="fingerTargetX" value="200" step="10" min="0" max="400">
+                    </div>
+                    <div class="control-group">
+                        <label for="fingerTargetY">Finger Target Y:</label>
+                        <input type="number" id="fingerTargetY" value="150" step="10" min="0" max="300">
+                    </div>
+                </div>
+                
+                <button onclick="solveFingerIK()">Solve Finger IK</button>
+                
+                <canvas id="fingerCanvas" width="600" height="300"></canvas>
+                
+                <div id="fingerOutput" class="output"></div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="IKSolver.js"></script>
+    <script>
+        // Initialize
+        let armChain = null;
+        let fingerChain = null;
+        
+        function initializeChains() {
+            // Create arm chain (shoulder at origin)
+            const shoulderPos = new Vector3D(0, 0, 0);
+            armChain = IKSolver.createArmChain(shoulderPos, 100, 90);
+            
+            // Create finger chain
+            const fingerBase = new Vector3D(50, 150, 0);
+            fingerChain = IKSolver.createFingerChain(fingerBase, [60, 50, 40], new Vector3D(1, 0, 0));
+        }
+        
+        function drawArm(canvas, chain, target) {
+            const ctx = canvas.getContext('2d');
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw grid
+            ctx.strokeStyle = '#e2e8f0';
+            ctx.lineWidth = 1;
+            for (let i = -300; i <= 300; i += 50) {
+                ctx.beginPath();
+                ctx.moveTo(centerX + i, 0);
+                ctx.lineTo(centerX + i, canvas.height);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(0, centerY + i);
+                ctx.lineTo(canvas.width, centerY + i);
+                ctx.stroke();
+            }
+            
+            // Draw target
+            ctx.fillStyle = '#f56565';
+            ctx.globalAlpha = 0.7;
+            ctx.beginPath();
+            ctx.arc(centerX + target.x, centerY + target.y, 8, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.globalAlpha = 1;
+            
+            // Draw bones
+            ctx.strokeStyle = '#4a5568';
+            ctx.lineWidth = 4;
+            for (let i = 0; i < chain.length - 1; i++) {
+                ctx.beginPath();
+                ctx.moveTo(centerX + chain[i].position.x, centerY + chain[i].position.y);
+                ctx.lineTo(centerX + chain[i + 1].position.x, centerY + chain[i + 1].position.y);
+                ctx.stroke();
+            }
+            
+            // Draw joints
+            chain.forEach((joint, i) => {
+                ctx.fillStyle = i === 0 ? '#48bb78' : '#667eea';
+                ctx.beginPath();
+                ctx.arc(centerX + joint.position.x, centerY + joint.position.y, 6, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            
+            // Draw labels
+            ctx.fillStyle = '#2d3748';
+            ctx.font = '12px Arial';
+            ctx.fillText('Shoulder', centerX + 10, centerY - 10);
+            ctx.fillText('Target', centerX + target.x + 10, centerY + target.y - 10);
+        }
+        
+        function drawFinger(canvas, chain, target) {
+            const ctx = canvas.getContext('2d');
+            const offsetX = 50;
+            const offsetY = canvas.height / 2;
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw target
+            ctx.fillStyle = '#f56565';
+            ctx.globalAlpha = 0.7;
+            ctx.beginPath();
+            ctx.arc(target.x, offsetY + target.y, 8, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.globalAlpha = 1;
+            
+            // Draw bones
+            ctx.strokeStyle = '#4a5568';
+            ctx.lineWidth = 3;
+            for (let i = 0; i < chain.length - 1; i++) {
+                ctx.beginPath();
+                ctx.moveTo(chain[i].position.x, offsetY + chain[i].position.y);
+                ctx.lineTo(chain[i + 1].position.x, offsetY + chain[i + 1].position.y);
+                ctx.stroke();
+            }
+            
+            // Draw joints
+            chain.forEach((joint, i) => {
+                ctx.fillStyle = i === 0 ? '#48bb78' : '#667eea';
+                ctx.beginPath();
+                ctx.arc(joint.position.x, offsetY + joint.position.y, 5, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        }
+        
+        function solveArmIK() {
+            const targetX = parseFloat(document.getElementById('targetX').value);
+            const targetY = parseFloat(document.getElementById('targetY').value);
+            const targetZ = parseFloat(document.getElementById('targetZ').value);
+            const algorithm = document.getElementById('algorithm').value;
+            
+            const target = new Vector3D(targetX, targetY, targetZ);
+            
+            const startTime = performance.now();
+            let solved;
+            if (algorithm === 'fabrik') {
+                solved = IKSolver.solveFABRIK(armChain, target, 20, 0.01);
+            } else {
+                solved = IKSolver.solveCCD(armChain, target, 20, 0.01);
+            }
+            const endTime = performance.now();
+            
+            const canvas = document.getElementById('armCanvas');
+            drawArm(canvas, solved, target);
+            
+            const output = document.getElementById('armOutput');
+            const distance = solved[solved.length - 1].position.distance(target);
+            const angles = IKSolver.calculateJointAngles(solved);
+            
+            // Clear and build output safely
+            output.textContent = '';
+            
+            const createOutputLine = (text, className = '') => {
+                const div = document.createElement('div');
+                div.className = `output-line ${className}`;
+                div.textContent = text;
+                return div;
+            };
+            
+            output.appendChild(createOutputLine(`Algorithm: ${algorithm.toUpperCase()}`, 'info'));
+            output.appendChild(createOutputLine(`Solve time: ${(endTime - startTime).toFixed(2)}ms`, 'info'));
+            output.appendChild(createOutputLine(`Distance to target: ${distance.toFixed(4)}`, distance < 1 ? 'success' : ''));
+            output.appendChild(createOutputLine(`Joint angles: ${angles.map(a => a.toFixed(1) + '°').join(', ')}`));
+            output.appendChild(createOutputLine('Joint positions:'));
+            solved.forEach((j, i) => {
+                output.appendChild(createOutputLine(`  Joint ${i}: (${j.position.x.toFixed(1)}, ${j.position.y.toFixed(1)}, ${j.position.z.toFixed(1)})`));
+            });
+        }
+        
+        function solveFingerIK() {
+            const targetX = parseFloat(document.getElementById('fingerTargetX').value);
+            const targetY = parseFloat(document.getElementById('fingerTargetY').value);
+            
+            const target = new Vector3D(targetX, targetY, 0);
+            
+            const startTime = performance.now();
+            const solved = IKSolver.solveFABRIK(fingerChain, target, 15, 0.01);
+            const endTime = performance.now();
+            
+            const canvas = document.getElementById('fingerCanvas');
+            drawFinger(canvas, solved, target);
+            
+            const output = document.getElementById('fingerOutput');
+            const distance = solved[solved.length - 1].position.distance(target);
+            const angles = IKSolver.calculateJointAngles(solved);
+            
+            // Clear and build output safely
+            output.textContent = '';
+            
+            const createOutputLine = (text, className = '') => {
+                const div = document.createElement('div');
+                div.className = `output-line ${className}`;
+                div.textContent = text;
+                return div;
+            };
+            
+            output.appendChild(createOutputLine('Algorithm: FABRIK', 'info'));
+            output.appendChild(createOutputLine(`Solve time: ${(endTime - startTime).toFixed(2)}ms`, 'info'));
+            output.appendChild(createOutputLine(`Distance to target: ${distance.toFixed(4)}`, distance < 1 ? 'success' : ''));
+            output.appendChild(createOutputLine(`Joint angles: ${angles.map(a => a.toFixed(1) + '°').join(', ')}`));
+            output.appendChild(createOutputLine('Joint positions:'));
+            solved.forEach((j, i) => {
+                output.appendChild(createOutputLine(`  Joint ${i}: (${j.position.x.toFixed(1)}, ${j.position.y.toFixed(1)}, ${j.position.z.toFixed(1)})`));
+            });
+        }
+        
+        // Initialize on load
+        window.addEventListener('DOMContentLoaded', () => {
+            initializeChains();
+            solveArmIK();
+            solveFingerIK();
+        });
+    </script>
+</body>
+</html>
