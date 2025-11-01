@@ -35,6 +35,7 @@ type
 
   TJoint = record
     Position: TVector3D;
+    Rotation: TVector3D;  // Euler angles in degrees (X=pitch, Y=yaw, Z=roll)
     MinAngle: Double;  // Constraint in degrees
     MaxAngle: Double;  // Constraint in degrees
     class function Create(const APosition: TVector3D; AMinAngle: Double = -180; AMaxAngle: Double = 180): TJoint; static;
@@ -62,6 +63,9 @@ type
     
     { Apply joint constraints to ensure angles are within limits }
     class function ApplyConstraints(const Chain: TJointArray): TJointArray;
+    
+    { Calculate bone rotations (Euler angles) from joint positions }
+    class function CalculateBoneRotations(const Chain: TJointArray): TJointArray;
     
     { Helper function to create a finger chain }
     class function CreateFingerChain(const BasePosition: TVector3D; 
@@ -154,6 +158,7 @@ end;
 class function TJoint.Create(const APosition: TVector3D; AMinAngle, AMaxAngle: Double): TJoint;
 begin
   Result.Position := APosition;
+  Result.Rotation := TVector3D.Create(0, 0, 0);  // Initialize rotation to zero
   Result.MinAngle := AMinAngle;
   Result.MaxAngle := AMaxAngle;
 end;
@@ -229,7 +234,8 @@ begin
     end;
   end;
 
-  Result := WorkChain;
+  // Calculate and store bone rotations
+  Result := CalculateBoneRotations(WorkChain);
 end;
 
 class function TIKSolver.SolveFABRIK(const Chain: TJointArray; const TargetPosition: TVector3D;
@@ -305,7 +311,8 @@ begin
     end;
   end;
 
-  Result := WorkChain;
+  // Calculate and store bone rotations
+  Result := CalculateBoneRotations(WorkChain);
 end;
 
 class function TIKSolver.RotateAroundAxis(const Vector, Axis: TVector3D; Angle: Double): TVector3D;
@@ -372,6 +379,41 @@ begin
       // This is a simplified version for demonstration
     end;
   end;
+end;
+
+class function TIKSolver.CalculateBoneRotations(const Chain: TJointArray): TJointArray;
+var
+  I: Integer;
+  BoneVector: TVector3D;
+  Yaw, Pitch, Roll: Double;
+begin
+  SetLength(Result, Length(Chain));
+  for I := 0 to High(Chain) do
+    Result[I] := Chain[I];
+
+  // For each bone (segment between two joints)
+  for I := 0 to Length(Result) - 2 do
+  begin
+    BoneVector := Result[I + 1].Position.Subtract(Result[I].Position).Normalize;
+    
+    // Calculate Euler angles (ZYX convention)
+    // Rotation around Y-axis (yaw)
+    Yaw := ArcTan2(BoneVector.X, BoneVector.Z) * (180 / Pi);
+    
+    // Rotation around X-axis (pitch)
+    // Clamp to [-1, 1] to avoid domain errors from floating-point precision
+    Pitch := ArcSin(Max(-1.0, Min(1.0, -BoneVector.Y))) * (180 / Pi);
+    
+    // For simplicity, roll (rotation around Z-axis) is set to 0
+    // A more complex implementation would track twist along the bone
+    Roll := 0;
+    
+    Result[I].Rotation := TVector3D.Create(Pitch, Yaw, Roll);
+  end;
+  
+  // Last joint's rotation is same as the previous bone's direction
+  if Length(Result) > 1 then
+    Result[High(Result)].Rotation := Result[High(Result) - 1].Rotation;
 end;
 
 class function TIKSolver.CreateFingerChain(const BasePosition: TVector3D; 

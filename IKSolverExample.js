@@ -42,7 +42,9 @@ const solvedArmCCD = IKSolver.solveCCD(armChain, targetHandPosition, 20, 0.01);
 
 console.log("\nArm chain after CCD IK:");
 solvedArmCCD.forEach((joint, i) => {
-    console.log(`  Joint ${i}: (${joint.position.x.toFixed(2)}, ${joint.position.y.toFixed(2)}, ${joint.position.z.toFixed(2)})`);
+    console.log(`  Joint ${i}:`);
+    console.log(`    Position: (${joint.position.x.toFixed(2)}, ${joint.position.y.toFixed(2)}, ${joint.position.z.toFixed(2)})`);
+    console.log(`    Rotation: (${joint.rotation.x.toFixed(2)}°, ${joint.rotation.y.toFixed(2)}°, ${joint.rotation.z.toFixed(2)}°)`);
 });
 
 const endEffectorDistance = solvedArmCCD[solvedArmCCD.length - 1].position.distance(targetHandPosition);
@@ -66,7 +68,9 @@ const solvedArmFABRIK = IKSolver.solveFABRIK(armChain2, targetHandPosition2, 20,
 
 console.log("\nArm chain after FABRIK IK:");
 solvedArmFABRIK.forEach((joint, i) => {
-    console.log(`  Joint ${i}: (${joint.position.x.toFixed(2)}, ${joint.position.y.toFixed(2)}, ${joint.position.z.toFixed(2)})`);
+    console.log(`  Joint ${i}:`);
+    console.log(`    Position: (${joint.position.x.toFixed(2)}, ${joint.position.y.toFixed(2)}, ${joint.position.z.toFixed(2)})`);
+    console.log(`    Rotation: (${joint.rotation.x.toFixed(2)}°, ${joint.rotation.y.toFixed(2)}°, ${joint.rotation.z.toFixed(2)}°)`);
 });
 
 const endEffectorDistance2 = solvedArmFABRIK[solvedArmFABRIK.length - 1].position.distance(targetHandPosition2);
@@ -94,7 +98,9 @@ const solvedFinger = IKSolver.solveFABRIK(fingerChain, targetFingerTip, 15, 0.01
 
 console.log("\nFinger chain after IK:");
 solvedFinger.forEach((joint, i) => {
-    console.log(`  Joint ${i}: (${joint.position.x.toFixed(2)}, ${joint.position.y.toFixed(2)}, ${joint.position.z.toFixed(2)})`);
+    console.log(`  Joint ${i}:`);
+    console.log(`    Position: (${joint.position.x.toFixed(2)}, ${joint.position.y.toFixed(2)}, ${joint.position.z.toFixed(2)})`);
+    console.log(`    Rotation: (${joint.rotation.x.toFixed(2)}°, ${joint.rotation.y.toFixed(2)}°, ${joint.rotation.z.toFixed(2)}°)`);
 });
 
 const fingerDistance = solvedFinger[solvedFinger.length - 1].position.distance(targetFingerTip);

@@ -19,6 +19,8 @@ Inverse Kinematics (IK) is the process of determining the joint angles/positions
 
 - **Joint Constraints**: Define minimum and maximum angle limits for realistic motion
 
+- **Rotation Output**: Returns both joint positions AND rotations (Euler angles in degrees) for each bone
+
 - **3D Vector Math**: Complete vector operations for 3D space manipulation
 
 - **Two Implementations**:
@@ -51,9 +53,11 @@ const targetHandPosition = new Vector3D(0.8, -1.5, 0.3);
 // Solve using FABRIK algorithm
 const solvedArm = IKSolver.solveFABRIK(armChain, targetHandPosition, 20, 0.01);
 
-// Access the solved joint positions
+// Access the solved joint positions and rotations
 solvedArm.forEach((joint, i) => {
-    console.log(`Joint ${i}: (${joint.position.x}, ${joint.position.y}, ${joint.position.z})`);
+    console.log(`Joint ${i}:`);
+    console.log(`  Position: (${joint.position.x}, ${joint.position.y}, ${joint.position.z})`);
+    console.log(`  Rotation: (${joint.rotation.x}°, ${joint.rotation.y}°, ${joint.rotation.z}°)`);
 });
 ```
 
@@ -78,10 +82,15 @@ begin
   // Solve using FABRIK algorithm
   SolvedArm := TIKSolver.SolveFABRIK(ArmChain, TargetPosition, 20, 0.01);
   
-  // Access solved joint positions
+  // Access solved joint positions and rotations
   for I := 0 to High(SolvedArm) do
-    WriteLn(Format('Joint %d: (%.2f, %.2f, %.2f)', 
-      [I, SolvedArm[I].Position.X, SolvedArm[I].Position.Y, SolvedArm[I].Position.Z]));
+  begin
+    WriteLn(Format('Joint %d:', [I]));
+    WriteLn(Format('  Position: (%.2f, %.2f, %.2f)', 
+      [SolvedArm[I].Position.X, SolvedArm[I].Position.Y, SolvedArm[I].Position.Z]));
+    WriteLn(Format('  Rotation: (%.2f°, %.2f°, %.2f°)', 
+      [SolvedArm[I].Rotation.X, SolvedArm[I].Rotation.Y, SolvedArm[I].Rotation.Z]));
+  end;
 end;
 ```
 
@@ -130,8 +139,15 @@ Joint := TJoint.Create(Position, MinAngle, MaxAngle);
 
 **Properties:**
 - `position` / `Position` - 3D position of the joint
+- `rotation` / `Rotation` - Euler angles (pitch, yaw, roll) in degrees representing bone orientation
 - `minAngle` / `MinAngle` - Minimum angle constraint (degrees)
 - `maxAngle` / `MaxAngle` - Maximum angle constraint (degrees)
+
+**Rotation Format:**
+The `rotation` property is a Vector3D containing Euler angles in degrees:
+- **X (Pitch)**: Rotation around the X-axis (up/down tilt)
+- **Y (Yaw)**: Rotation around the Y-axis (left/right turn)
+- **Z (Roll)**: Rotation around the Z-axis (twist along the bone - currently always 0)
 
 ### IK Solver Methods
 

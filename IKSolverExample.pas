@@ -62,8 +62,13 @@ begin
   
   WriteLn(#13#10'Arm chain after CCD IK:');
   for I := 0 to High(SolvedArmCCD) do
-    WriteLn(Format('  Joint %d: (%.2f, %.2f, %.2f)', 
-      [I, SolvedArmCCD[I].Position.X, SolvedArmCCD[I].Position.Y, SolvedArmCCD[I].Position.Z]));
+  begin
+    WriteLn(Format('  Joint %d:', [I]));
+    WriteLn(Format('    Position: (%.2f, %.2f, %.2f)', 
+      [SolvedArmCCD[I].Position.X, SolvedArmCCD[I].Position.Y, SolvedArmCCD[I].Position.Z]));
+    WriteLn(Format('    Rotation: (%.2f°, %.2f°, %.2f°)', 
+      [SolvedArmCCD[I].Rotation.X, SolvedArmCCD[I].Rotation.Y, SolvedArmCCD[I].Rotation.Z]));
+  end;
   
   EndEffectorDistance := SolvedArmCCD[High(SolvedArmCCD)].Position.Distance(TargetHandPosition);
   WriteLn(Format(#13#10'Distance to target: %.4f', [EndEffectorDistance]));
@@ -96,8 +101,13 @@ begin
   
   WriteLn(#13#10'Arm chain after FABRIK IK:');
   for I := 0 to High(SolvedArmFABRIK) do
-    WriteLn(Format('  Joint %d: (%.2f, %.2f, %.2f)', 
-      [I, SolvedArmFABRIK[I].Position.X, SolvedArmFABRIK[I].Position.Y, SolvedArmFABRIK[I].Position.Z]));
+  begin
+    WriteLn(Format('  Joint %d:', [I]));
+    WriteLn(Format('    Position: (%.2f, %.2f, %.2f)', 
+      [SolvedArmFABRIK[I].Position.X, SolvedArmFABRIK[I].Position.Y, SolvedArmFABRIK[I].Position.Z]));
+    WriteLn(Format('    Rotation: (%.2f°, %.2f°, %.2f°)', 
+      [SolvedArmFABRIK[I].Rotation.X, SolvedArmFABRIK[I].Rotation.Y, SolvedArmFABRIK[I].Rotation.Z]));
+  end;
   
   EndEffectorDistance := SolvedArmFABRIK[High(SolvedArmFABRIK)].Position.Distance(TargetHandPosition);
   WriteLn(Format(#13#10'Distance to target: %.4f', [EndEffectorDistance]));
@@ -137,8 +147,13 @@ begin
   
   WriteLn(#13#10'Finger chain after IK:');
   for I := 0 to High(SolvedFinger) do
-    WriteLn(Format('  Joint %d: (%.2f, %.2f, %.2f)', 
-      [I, SolvedFinger[I].Position.X, SolvedFinger[I].Position.Y, SolvedFinger[I].Position.Z]));
+  begin
+    WriteLn(Format('  Joint %d:', [I]));
+    WriteLn(Format('    Position: (%.2f, %.2f, %.2f)', 
+      [SolvedFinger[I].Position.X, SolvedFinger[I].Position.Y, SolvedFinger[I].Position.Z]));
+    WriteLn(Format('    Rotation: (%.2f°, %.2f°, %.2f°)', 
+      [SolvedFinger[I].Rotation.X, SolvedFinger[I].Rotation.Y, SolvedFinger[I].Rotation.Z]));
+  end;
   
   FingerDistance := SolvedFinger[High(SolvedFinger)].Position.Distance(TargetFingerTip);
   WriteLn(Format(#13#10'Distance to target: %.4f', [FingerDistance]));

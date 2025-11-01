@@ -70,10 +70,13 @@ class Joint {
         this.position = position instanceof Vector3D ? position : new Vector3D(position.x, position.y, position.z);
         this.minAngle = minAngle; // Constraint in degrees
         this.maxAngle = maxAngle; // Constraint in degrees
+        this.rotation = new Vector3D(0, 0, 0); // Euler angles in degrees (x, y, z)
     }
 
     clone() {
-        return new Joint(this.position.clone(), this.minAngle, this.maxAngle);
+        const joint = new Joint(this.position.clone(), this.minAngle, this.maxAngle);
+        joint.rotation = this.rotation.clone();
+        return joint;
     }
 }
 
@@ -137,7 +140,8 @@ class IKSolver {
             }
         }
 
-        return workChain;
+        // Calculate and store bone rotations
+        return this.calculateBoneRotations(workChain);
     }
 
     /**
@@ -203,7 +207,8 @@ class IKSolver {
             }
         }
 
-        return workChain;
+        // Calculate and store bone rotations
+        return this.calculateBoneRotations(workChain);
     }
 
     /**
@@ -283,6 +288,42 @@ class IKSolver {
         }
         
         return constrainedChain;
+    }
+
+    /**
+     * Calculate bone rotations (Euler angles) from joint positions
+     * @param {Array<Joint>} chain - Joint chain with positions
+     * @returns {Array<Joint>} - Chain with updated rotation values (in degrees)
+     */
+    static calculateBoneRotations(chain) {
+        const rotatedChain = chain.map(joint => joint.clone());
+        
+        // For each bone (segment between two joints)
+        for (let i = 0; i < rotatedChain.length - 1; i++) {
+            const boneVector = rotatedChain[i + 1].position.subtract(rotatedChain[i].position).normalize();
+            
+            // Calculate Euler angles (ZYX convention)
+            // Rotation around Y-axis (yaw)
+            const yaw = Math.atan2(boneVector.x, boneVector.z) * (180 / Math.PI);
+            
+            // Rotation around X-axis (pitch)
+            // Clamp to [-1, 1] to avoid domain errors from floating-point precision
+            const pitch = Math.asin(Math.max(-1, Math.min(1, -boneVector.y))) * (180 / Math.PI);
+            
+            // For simplicity, roll (rotation around Z-axis) is set to 0
+            // A more complex implementation would track twist along the bone
+            const roll = 0;
+            
+            rotatedChain[i].rotation = new Vector3D(pitch, yaw, roll);
+        }
+        
+        // Last joint's rotation is same as the previous bone's direction
+        if (rotatedChain.length > 1) {
+            rotatedChain[rotatedChain.length - 1].rotation = 
+                rotatedChain[rotatedChain.length - 2].rotation.clone();
+        }
+        
+        return rotatedChain;
     }
 
     /**
