@@ -401,7 +401,8 @@ begin
     Yaw := ArcTan2(BoneVector.X, BoneVector.Z) * (180 / Pi);
     
     // Rotation around X-axis (pitch)
-    Pitch := ArcSin(-BoneVector.Y) * (180 / Pi);
+    // Clamp to [-1, 1] to avoid domain errors from floating-point precision
+    Pitch := ArcSin(Max(-1.0, Min(1.0, -BoneVector.Y))) * (180 / Pi);
     
     // For simplicity, roll (rotation around Z-axis) is set to 0
     // A more complex implementation would track twist along the bone

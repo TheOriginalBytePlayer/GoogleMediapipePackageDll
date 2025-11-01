@@ -307,7 +307,8 @@ class IKSolver {
             const yaw = Math.atan2(boneVector.x, boneVector.z) * (180 / Math.PI);
             
             // Rotation around X-axis (pitch)
-            const pitch = Math.asin(-boneVector.y) * (180 / Math.PI);
+            // Clamp to [-1, 1] to avoid domain errors from floating-point precision
+            const pitch = Math.asin(Math.max(-1, Math.min(1, -boneVector.y))) * (180 / Math.PI);
             
             // For simplicity, roll (rotation around Z-axis) is set to 0
             // A more complex implementation would track twist along the bone
