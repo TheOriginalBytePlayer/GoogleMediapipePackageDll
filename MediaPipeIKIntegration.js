@@ -166,6 +166,9 @@ function manipulateFinger(landmarks, fingerName, targetPosition, algorithm = 'fa
     console.log(`New tip position: (${solved[solved.length-1].position.x.toFixed(2)}, ` +
                 `${solved[solved.length-1].position.y.toFixed(2)}, ` +
                 `${solved[solved.length-1].position.z.toFixed(2)})`);
+    console.log(`New tip rotation: (${solved[solved.length-1].rotation.x.toFixed(2)}°, ` +
+                `${solved[solved.length-1].rotation.y.toFixed(2)}°, ` +
+                `${solved[solved.length-1].rotation.z.toFixed(2)}°)`);
     
     return solved;
 }
@@ -199,6 +202,9 @@ function manipulateArm(landmarks, side, targetPosition, algorithm = 'fabrik') {
     console.log(`New wrist position: (${solved[solved.length-1].position.x.toFixed(2)}, ` +
                 `${solved[solved.length-1].position.y.toFixed(2)}, ` +
                 `${solved[solved.length-1].position.z.toFixed(2)})`);
+    console.log(`New wrist rotation: (${solved[solved.length-1].rotation.x.toFixed(2)}°, ` +
+                `${solved[solved.length-1].rotation.y.toFixed(2)}°, ` +
+                `${solved[solved.length-1].rotation.z.toFixed(2)}°)`);
     
     return solved;
 }
